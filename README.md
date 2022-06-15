@@ -8,7 +8,7 @@ Special plotting tools using matplotlib
 You can import the files like any other python library.
 The intended use is
 ```python
-from mpl-special import special, annotate
+from mpl_special import special, annotate
 special.setup(use_tex=True)    # if you want/have latex fonts
 ```
 
