@@ -10,7 +10,7 @@ The intended use is
 ```python
 from mpl-special import special, annotate
 special.setup(use_tex=True)    # if you want/have latex fonts
-'''
+```
 
 # list of features
 - function to generate the correct figure size for including figures in latex documents without further rescaling
