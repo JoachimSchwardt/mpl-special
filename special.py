@@ -3,35 +3,40 @@
 Special tools for easier use of matplotlib
 """
 
+import os
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
-import matplotlib as mpl
 from figsize import set_figsize
 
 
 COLORS = ['blue', (1, 0.5, 0), 'green', 'darkred', 'cyan', 'orangered', 'purple', 'lime']
 
 
-def setup(use_tex=False, figsize=None, colors=None):
+def setup(UseTex=False, figsize=None, colors=None):
     """Sets special matplotlib parameters and calls the personal style-sheet.
     Modify the style-sheet for general purpose parameters
     """
-    mpl.style.use("./mpl-style-sheet.mplstyle")
+    path = os.path.realpath(__file__)
+    path = path.replace(os.path.basename(path), "mpl-style-sheet.mplstyle")
+    mpl.style.use(path)
+
     if figsize is None:
         figsize = set_figsize()
     elif isinstance(figsize, (float, int)):
         figsize = set_figsize(figsize)
 
     plt.rcParams["figure.figsize"] = figsize
+    plt.rcParams["legend.edgecolor"] = plt.rcParams["axes.facecolor"]
 
     if colors is None:
         colors = COLORS
     plt.rcParams["axes.prop_cycle"] = mpl.cycler(color=colors)
 
     # if 'False', we want to go back to normal fonts --> not inside 'if' !
-    plt.rcParams["text.usetex"] = use_tex
-    if use_tex:
+    plt.rcParams["text.usetex"] = UseTex
+    if UseTex:
         plt.rcParams["font.family"] = 'serif'   # 'lmodern'
         plt.rcParams["font.serif"] = 'Computer Modern'
         plt.rcParams["text.latex.preamble"] = r'\usepackage{siunitx}'
@@ -108,7 +113,7 @@ def plot_colorbar(heat, cmap='viridis', orientation="horizontal", width=0.8, hei
     plt.gca().set_visible(False)
     cax = plt.axes([x0, y0, width, height])
     plt.colorbar(orientation=orientation, cax=cax, label=label)
-    plt.show()
+    return cax
 
 
 ###############################################################################
@@ -117,7 +122,7 @@ def plot_colorbar(heat, cmap='viridis', orientation="horizontal", width=0.8, hei
 
 
 class AlphabeticalLabels():
-    """Simple cycle for labels. 
+    """Simple cycle for labels.
     By default the cycle contains the letters 'a' through 'l'.
     """
     def __init__(self, abc_labels=None, ctr=0):
@@ -154,24 +159,30 @@ def ticks_in_limits(ticks, limits, axis='x'):
     for tick in ticks:
         tick_we = tick.get_window_extent()
         if axis == 'x':
-            width = tick_we.x1 - tick_we.x0
-            TickInAxis = ((tick_we.x0 + width / 2) > limits[0]
-                          and (tick_we.x1 - width / 2) < limits[1])
+            # width = tick_we.x1 - tick_we.x0
+            # print(f"DEBUG: {width = }, {limits = }, {tick_we.x0}, {tick_we.x1}")
+            # TickInAxis = ((tick_we.x0 + width / 2) > limits[0]
+            #               and (tick_we.x1 - width / 2) < limits[1])
+            TickInAxis = (tick_we.x1 > limits[0] and tick_we.x0 < limits[1])
+            # print(f"{TickInAxis = }")
+            
         elif axis == 'y':
-            height = tick_we.y1 - tick_we.y0
-            TickInAxis = ((tick_we.y0 + height / 2) > limits[0]
-                          and (tick_we.y1 - height / 2) < limits[1])
+            # height = tick_we.y1 - tick_we.y0
+            # TickInAxis = ((tick_we.y0 + height / 2) > limits[0]
+            #               and (tick_we.y1 - height / 2) < limits[1])
+            # TickInAxis = (tick_we.y1 > limits[0] and tick_we.y0 < limits[1])
+            TickInAxis = limits[1] > (tick_we.y1 + tick_we.y0) / 2 > limits[0]
         else:
             msg = f"Wrong parameter '{axis=}', should be 'x' or 'y'."
             raise AttributeError(msg)
 
         if TickInAxis:
             new_ticks.append(tick)
-            
+
     return new_ticks
 
 
-def _embed_xlabel(axis, align, caption=None):
+def embed_xlabel(axis, align, caption=None):
     """TODO:
     """
     ax0 = axis.get_window_extent().x0
@@ -213,7 +224,7 @@ def _embed_xlabel(axis, align, caption=None):
                   transform=axis.transAxes)
 
 
-def _embed_ylabel(axis, align, min_padding=5):
+def embed_ylabel(axis, align, min_padding=5):
     """TODO:
     """
     ax0 = axis.get_window_extent().x0
@@ -256,8 +267,8 @@ def _embed_ylabel(axis, align, min_padding=5):
             if axis.yaxis.get_label().get_window_extent().x1 + min_padding > ax0:
                 axis.set_ylabel(label, rotation=0, ha='right', va='center')
                 axis.yaxis.set_label_coords(-0.005, ypos)
-    
-        elif xpos > 0.5:         # y-label on left axis
+
+        elif xpos > 0.5:         # y-label on right axis
             if axis.yaxis.get_label().get_window_extent().x0 - min_padding < ax1:
                 axis.set_ylabel(label, rotation=0, ha='left', va='center')
                 axis.yaxis.set_label_coords(1.005, ypos)
@@ -322,8 +333,8 @@ def embed_labels(axes, set_captions=False,
         else:
             caption = None
 
-        _embed_xlabel(axis, xva[i], caption)
-        _embed_ylabel(axis, yha[i])
+        embed_xlabel(axis, xva[i], caption)
+        embed_ylabel(axis, yha[i])
 
 
 def polish(fig, axes, set_captions=False,
@@ -339,8 +350,13 @@ def polish(fig, axes, set_captions=False,
     yha == y-vertical alignment array with values 'right', 'center' or 'left'
         refers to the vertical alignment of the ylabel relative to the ticks
     """
-    fig.tight_layout()
     fig.canvas.draw()
+    fig.tight_layout()
+    embed_labels(axes, set_captions=set_captions,
+                 embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
+                 xva=xva, yha=yha)
+    fig.canvas.draw()
+    fig.tight_layout()
     embed_labels(axes, set_captions=set_captions,
                  embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
                  xva=xva, yha=yha)
@@ -398,7 +414,7 @@ def multiple_formatter(denominator=2, number=np.pi, latex=r'\pi'):
     return _multiple_formatter
 
 
-def format_ticklabels(ax, axis='x', major_den=2, minor_den=12,
+def format_ticklabels(ax, axis='x', major_den=2, minor_den=0,
                       number=np.pi, latex=r'\pi'):
     """Format the ticklabels on the axis 'axis' of the (sub)plot 'ax'. """
     if axis in ['x', 'xaxis']:
@@ -408,7 +424,8 @@ def format_ticklabels(ax, axis='x', major_den=2, minor_den=12,
 
     subaxis = getattr(ax, axis)
     subaxis.set_major_locator(plt.MultipleLocator(number / major_den))
-    subaxis.set_minor_locator(plt.MultipleLocator(number / minor_den))
+    if minor_den > 0:
+        subaxis.set_minor_locator(plt.MultipleLocator(number / minor_den))
 
     formatter = multiple_formatter(denominator=major_den,
                                    number=number, latex=latex)
@@ -480,7 +497,7 @@ def si_string(value, unit=r"ms", digits=3):
 def main():
     print(__doc__)
 
-    setup(use_tex=True)
+    setup(UseTex=True)
     t = np.linspace(-0.05, 1.05, 200)
     # colors = Colors()
     fig, ax = plt.subplots(2, 2)
