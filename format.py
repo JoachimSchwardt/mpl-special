@@ -35,15 +35,15 @@ class AlphabeticalLabels():
         return next_label
 
 
-def set_ticks_linear(ax, vmin, vmax, numticks, decimals=7, axis='x'):
+def set_ticks_linear(axis, vmin, vmax, numticks, decimals=7, which='x'):
     """
     Puts 'numticks' linearly spaced ticks from 'vmin' to 'vmax' along the
         'axis' of the subplot 'ax'.
     Values are rounded to the specified 'decimals'.
     """
     ticks = np.round(np.linspace(vmin, vmax, numticks), decimals)
-    getattr(ax, f"set_{axis}ticks")(ticks)
-    getattr(ax, f"set_{axis}ticklabels")(ticks)
+    getattr(axis, f"set_{which}ticks")(ticks)
+    getattr(axis, f"set_{which}ticklabels")(ticks)
 
 
 def ticks_in_limits(axis, which='x'):
@@ -251,7 +251,7 @@ def polish(fig, axes, set_captions=False,
     """
     fig.canvas.draw()
     fig.tight_layout()
-    embed_labels(axes, set_captions=set_captions,
+    embed_labels(axes, set_captions=False,
                   embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
                   xva=xva, yha=yha)
     fig.canvas.draw()
@@ -313,15 +313,15 @@ def multiple_formatter(denominator=2, number=np.pi, latex=r'\pi'):
     return _multiple_formatter
 
 
-def format_ticklabels(ax, axis='x', major_den=2, minor_den=0,
+def format_ticklabels(axis, which='x', major_den=2, minor_den=0,
                       number=np.pi, latex=r'\pi'):
     """Format the ticklabels on the axis 'axis' of the (sub)plot 'ax'. """
-    if axis in ['x', 'xaxis']:
-        axis = 'xaxis'
-    if axis in ['y', 'yaxis']:
-        axis = 'yaxis'
+    if which in ['x', 'xaxis']:
+        which = 'xaxis'
+    if which in ['y', 'yaxis']:
+        which = 'yaxis'
 
-    subaxis = getattr(ax, axis)
+    subaxis = getattr(axis, which)
     subaxis.set_major_locator(plt.MultipleLocator(number / major_den))
     if minor_den > 0:
         subaxis.set_minor_locator(plt.MultipleLocator(number / minor_den))

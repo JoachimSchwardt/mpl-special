@@ -8,8 +8,24 @@ Special plotting tools using matplotlib
 You can import the files like any other python library.
 The intended use is
 ```python
-from mpl_special import special, annotate
-special.setup(use_tex=True)    # if you want/have latex fonts
+import mpl_special
+
+
+# example: simple figure with embedded labels and ticks formatted as multiples of pi
+import matplotlib.pyplot as plt
+
+t = np.linspace(0, 2*np.pi, 300)
+fig, ax = plt.subplots()
+ax.set_xlabel(r"$t$")
+ax.set_ylabel(r"$x(t)$")
+ax.plot(t, np.sin(t) + 0.1*t, label='data')
+ax.legend()
+mpl_special.format_ticklabels(ax, which='x')
+mpl_special.polish(fig, ax, set_captions=True)
+
+
+# example: explicit call to 'setup' if you do not want latex fonts
+mpl_special.setup(UseTex=False)
 ```
 
 # list of features

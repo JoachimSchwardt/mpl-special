@@ -56,3 +56,4 @@ def set_figsize(width=None, fraction=1, subplots=(1, 1)):
     fig_height_in = fig_width_in * golden_ratio * (subplots[0] / subplots[1])
 
     return (fig_width_in, fig_height_in)
+
