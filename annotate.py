@@ -7,6 +7,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
+
+__all__ = ['annotate_points', 'draw_bbox']
+
+
 def annotate_points(ax, text, x, y, yoffset=0.03, align='center',
                     TextBelow=False, **kwargs):
     """Annotate a set of points (above or below)"""

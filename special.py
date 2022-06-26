@@ -151,8 +151,8 @@ def set_ticks_linear(ax, vmin, vmax, numticks, decimals=7, axis='x'):
     ticks = np.round(np.linspace(vmin, vmax, numticks), decimals)
     getattr(ax, f"set_{axis}ticks")(ticks)
     getattr(ax, f"set_{axis}ticklabels")(ticks)
-    
-    
+
+
 def ticks_in_limits(axis, which='x'):
     """Return the indices of ticks within the limits of a given axis"""
     lim = getattr(axis, f"get_{which}lim")()
@@ -195,7 +195,7 @@ def _embed_label(axis, which='x'):
     ticklabels = np.array(getattr(axis, f"get_{which}ticklabels")())[indx]
     if len(ticklabels) <= 1:
         raise IndexError("Length of ticklabels below 2!")
-        
+
     return ticklabels, [ax0, ay0, width, height]
 
 
