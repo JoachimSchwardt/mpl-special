@@ -8,9 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-__all__ = ['AlphabeticalLabels', 
-           'set_ticks_linear', 'ticks_in_limits', 'ticklabels_in_limits', 
-           'embed_xlabel', 'embed_ylabel', 'embed_labels', 'polish', 
+__all__ = ['AlphabeticalLabels',
+           'set_ticks_linear', 'ticks_in_limits', 'ticklabels_in_limits',
+           'embed_xlabel', 'embed_ylabel', 'embed_labels', 'polish',
            'multiple_formatter', 'format_ticklabels', 'si_string']
 
 
@@ -74,11 +74,11 @@ def ticklabels_in_limits(ticklabels, limits, which='x'):
 
 def _get_largest_ticklabel(ticklabels, which='x'):
     """Return the ticklabel with the largest size along the given axis."""
-    return max(ticklabels, 
-               key=lambda tck: (getattr(tck.get_window_extent(), f"{which}1") 
+    return max(ticklabels,
+               key=lambda tck: (getattr(tck.get_window_extent(), f"{which}1")
                                 - getattr(tck.get_window_extent(), f"{which}0"))
                )
-    
+
 
 
 def _embed_label(axis, which='x'):
@@ -112,7 +112,7 @@ def embed_xlabel(axis, align='top', caption=None):
 
     last_tick_we = ticklabels[-1].get_window_extent()
     xpos = (last_tick_we.x0 + ticklabels[-2].get_window_extent().x1) / 2
-    
+
     max_tick_we = _get_largest_ticklabel(ticklabels, which='y').get_window_extent()
     tick_height = max_tick_we.y1 - max_tick_we.y0
 
