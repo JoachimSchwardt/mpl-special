@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 __all__ = ['AlphabeticalLabels', 
            'set_ticks_linear', 'ticks_in_limits', 'ticklabels_in_limits', 
-           '_embed_label', 'embed_xlabel', 'embed_ylabel', 'embed_labels', 'polish', 
+           'embed_xlabel', 'embed_ylabel', 'embed_labels', 'polish', 
            'multiple_formatter', 'format_ticklabels', 'si_string']
 
 
@@ -72,6 +72,15 @@ def ticklabels_in_limits(ticklabels, limits, which='x'):
     return new_ticklabels
 
 
+def _get_largest_ticklabel(ticklabels, which='x'):
+    """Return the ticklabel with the largest size along the given axis."""
+    return max(ticklabels, 
+               key=lambda tck: (getattr(tck.get_window_extent(), f"{which}1") 
+                                - getattr(tck.get_window_extent(), f"{which}0"))
+               )
+    
+
+
 def _embed_label(axis, which='x'):
     """Subroutine:
     Returns the ticklabels within the limits of the given axis as well as a
@@ -103,15 +112,16 @@ def embed_xlabel(axis, align='top', caption=None):
 
     last_tick_we = ticklabels[-1].get_window_extent()
     xpos = (last_tick_we.x0 + ticklabels[-2].get_window_extent().x1) / 2
-    # ypos = (last_tick_we.y0 + last_tick_we.y1) / 2
-    tick_height = last_tick_we.y1 - last_tick_we.y0
+    
+    max_tick_we = _get_largest_ticklabel(ticklabels, which='y').get_window_extent()
+    tick_height = max_tick_we.y1 - max_tick_we.y0
 
     if align == 'bottom':
-        ypos = last_tick_we.y0 - tick_height / 2
+        ypos = max_tick_we.y0 - tick_height / 2
     elif align == 'center':
-        ypos = last_tick_we.y0
+        ypos = max_tick_we.y0
     elif align == 'top':
-        ypos = last_tick_we.y0 + tick_height / 2
+        ypos = max_tick_we.y0 + tick_height / 2
     else:
         msg = ("Vertical x-alignment should have been one of "
                 + f"['top', 'center', 'bottom'], but was {align}!")
@@ -125,8 +135,8 @@ def embed_xlabel(axis, align='top', caption=None):
     axis.xaxis.set_label_coords(xpos, ypos)
 
     if caption is not None:
-        ypos = (last_tick_we.y0 - tick_height - ay0) / height
-        axis.text(0.5, ypos, caption, ha='center', va='center',
+        ypos = (max_tick_we.y0 - tick_height - ay0) / height
+        axis.text(0.5, ypos, caption, va='center', ha='center',
                   transform=axis.transAxes)
 
 
@@ -141,7 +151,6 @@ def embed_ylabel(axis, align='right'):
 
     last_tick_we = ticklabels[-1].get_window_extent()
     ypos = (last_tick_we.y0 + ticklabels[-2].get_window_extent().y1) / 2
-    # xpos = (last_tick_we.x1 + last_tick_we.x0) / 2
     tick_width = last_tick_we.x1 - last_tick_we.x0
 
     if align == 'left':
