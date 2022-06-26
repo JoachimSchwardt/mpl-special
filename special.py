@@ -151,39 +151,38 @@ def set_ticks_linear(ax, vmin, vmax, numticks, decimals=7, axis='x'):
     ticks = np.round(np.linspace(vmin, vmax, numticks), decimals)
     getattr(ax, f"set_{axis}ticks")(ticks)
     getattr(ax, f"set_{axis}ticklabels")(ticks)
+    
+    
+def ticks_in_limits(axis, which='x'):
+    """Return the indices of ticks within the limits of a given axis"""
+    lim = getattr(axis, f"get_{which}lim")()
+    ticks = getattr(axis, f"get_{which}ticks")()
+    return (lim[0] <= ticks) & (ticks <= lim[1])
 
 
-def ticks_in_limits(ticks, limits, axis='x'):
+def ticklabels_in_limits(ticklabels, limits, which='x'):
     """Subroutine for 'embed_labels'. Returns subset of ticks inside limits"""
-    new_ticks = []
-    for tick in ticks:
-        tick_we = tick.get_window_extent()
-        if axis == 'x':
-            # width = tick_we.x1 - tick_we.x0
-            # print(f"DEBUG: {width = }, {limits = }, {tick_we.x0}, {tick_we.x1}")
-            # TickInAxis = ((tick_we.x0 + width / 2) > limits[0]
-            #               and (tick_we.x1 - width / 2) < limits[1])
-            TickInAxis = (tick_we.x1 > limits[0] and tick_we.x0 < limits[1])
-            # print(f"{TickInAxis = }")
-            
-        elif axis == 'y':
-            # height = tick_we.y1 - tick_we.y0
-            # TickInAxis = ((tick_we.y0 + height / 2) > limits[0]
-            #               and (tick_we.y1 - height / 2) < limits[1])
-            # TickInAxis = (tick_we.y1 > limits[0] and tick_we.y0 < limits[1])
+    new_ticklabels = []
+    for ticklabel in ticklabels:
+        tick_we = ticklabel.get_window_extent()
+        if which == 'x':
+            TickInAxis = ((tick_we.x1 > limits[0]) and (tick_we.x0 < limits[1]))
+        elif which == 'y':
             TickInAxis = limits[1] > (tick_we.y1 + tick_we.y0) / 2 > limits[0]
         else:
-            msg = f"Wrong parameter '{axis=}', should be 'x' or 'y'."
+            msg = f"Wrong parameter '{which=}', should be 'x' or 'y'."
             raise AttributeError(msg)
 
         if TickInAxis:
-            new_ticks.append(tick)
+            new_ticklabels.append(ticklabel)
 
-    return new_ticks
+    return new_ticklabels
 
 
-def embed_xlabel(axis, align, caption=None):
-    """TODO:
+def _embed_label(axis, which='x'):
+    """Subroutine:
+    Returns the ticklabels within the limits of the given axis as well as a
+    list containing [axis_x0, axis_y0, axis_width, axis_height]
     """
     ax0 = axis.get_window_extent().x0
     ay0 = axis.get_window_extent().y0
@@ -192,64 +191,72 @@ def embed_xlabel(axis, align, caption=None):
     width = ax1 - ax0
     height = ay1 - ay0
 
-    ticks = ticks_in_limits(axis.get_xticklabels(), [ax0, ax1], axis='x')
-    if len(ticks) <= 1:
-        raise IndexError("Length of ticks below 2!")
+    indx = ticks_in_limits(axis, which=which)
+    ticklabels = np.array(getattr(axis, f"get_{which}ticklabels")())[indx]
+    if len(ticklabels) <= 1:
+        raise IndexError("Length of ticklabels below 2!")
+        
+    return ticklabels, [ax0, ay0, width, height]
 
-    last_tick_we = ticks[-1].get_window_extent()
-    xpos = ((last_tick_we.x0 + ticks[-2].get_window_extent().x1) / 2 - ax0) / width
-    ypos = (last_tick_we.y0 + last_tick_we.y1) / 2
-    label_height = (last_tick_we.y1 - last_tick_we.y0) / 2
+
+def embed_xlabel(axis, align='top', caption=None):
+    """Embed the xlabel of the given axis into the ticklabels.
+    Alignment can be ::
+        'top' -> midpoint of ticklabel height
+        'center' -> lower edge of ticklabels
+        'bottom' -> lower edge minus half the label height
+    """
+    ticklabels, [ax0, ay0, width, height] = _embed_label(axis, which='x')
+
+    last_tick_we = ticklabels[-1].get_window_extent()
+    xpos = (last_tick_we.x0 + ticklabels[-2].get_window_extent().x1) / 2
+    # ypos = (last_tick_we.y0 + last_tick_we.y1) / 2
+    tick_height = last_tick_we.y1 - last_tick_we.y0
 
     if align == 'bottom':
-        ypos -= 2.0 * label_height
+        ypos = last_tick_we.y0 - tick_height / 2
     elif align == 'center':
-        ypos -= label_height
+        ypos = last_tick_we.y0
     elif align == 'top':
-        ypos += 0.0
+        ypos = last_tick_we.y0 + tick_height / 2
     else:
         msg = ("Vertical x-alignment should have been one of "
                 + f"['top', 'center', 'bottom'], but was {align}!")
         raise ValueError(msg)
 
     # shift and transform to relative units
+    xpos = (xpos - ax0) / width
     ypos = (ypos - ay0) / height
     label = axis.get_xlabel()
     axis.set_xlabel(label, rotation=0, va='center', ha='center')
     axis.xaxis.set_label_coords(xpos, ypos)
 
     if caption is not None:
-        ypos = (last_tick_we.y0 - label_height - ay0) / height
+        ypos = (last_tick_we.y0 - tick_height - ay0) / height
         axis.text(0.5, ypos, caption, ha='center', va='center',
                   transform=axis.transAxes)
 
 
-def embed_ylabel(axis, align, min_padding=5):
-    """TODO:
+def embed_ylabel(axis, align='right'):
+    """Embed the ylabel of the given axis into the ticklabels.
+    Alignment can be ::
+        'right' -> midpoint of ticklabel width
+        'center' -> left edge of ticklabels
+        'left' -> left edge minus half the label width
     """
-    ax0 = axis.get_window_extent().x0
-    ay0 = axis.get_window_extent().y0
-    ax1 = axis.get_window_extent().x1
-    ay1 = axis.get_window_extent().y1
-    width = ax1 - ax0
-    height = ay1 - ay0
+    ticklabels, [ax0, ay0, width, height] = _embed_label(axis, which='y')
 
-    ticks = ticks_in_limits(axis.get_yticklabels(), [ay0, ay1], axis='y')
-    if len(ticks) <= 1:
-        raise IndexError("Length of ticks below 2!")
-
-    last_tick_we = ticks[-1].get_window_extent()
-    ypos = ((last_tick_we.y0 + ticks[-2].get_window_extent().y1) / 2 - ay0) / height
-    xpos = last_tick_we.x1
+    last_tick_we = ticklabels[-1].get_window_extent()
+    ypos = (last_tick_we.y0 + ticklabels[-2].get_window_extent().y1) / 2
+    # xpos = (last_tick_we.x1 + last_tick_we.x0) / 2
+    tick_width = last_tick_we.x1 - last_tick_we.x0
 
     if align == 'left':
-        xpos = last_tick_we.x0
+        xpos = last_tick_we.x0 - tick_width / 2
     elif align == 'center':
-        xpos = (last_tick_we.x0
-                + ticks[0].get_window_extent().x0
-                + ticks[0].get_window_extent().x1) / 3
+        xpos = last_tick_we.x0
     elif align == 'right':
-        xpos += 0
+        xpos = last_tick_we.x0 + tick_width / 2
     else:
         msg = ("Horizontal y-alignment should have been one of "
                 + f"['left', 'center', 'right'], but was {align}!")
@@ -257,21 +264,23 @@ def embed_ylabel(axis, align, min_padding=5):
 
     # shift and transform to relative units
     xpos = (xpos - ax0) / width
+    ypos = (ypos - ay0) / height
     label = axis.get_ylabel()
-    axis.set_ylabel(label, rotation=0, ha=align, va='center')
+    axis.set_ylabel(label, rotation=0, ha='center', va='center')
     axis.yaxis.set_label_coords(xpos, ypos)
 
     # ensure that the y-label has a minimal padding to the y-axis
-    if min_padding > 0:
-        if xpos < 0.5:           # y-label on left axis
-            if axis.yaxis.get_label().get_window_extent().x1 + min_padding > ax0:
-                axis.set_ylabel(label, rotation=0, ha='right', va='center')
-                axis.yaxis.set_label_coords(-0.005, ypos)
+    if xpos < 0.5:           # y-label on left axis
+        min_padding = last_tick_we.x1 - ax0
+        if axis.yaxis.get_label().get_window_extent().x1 + min_padding > ax0:
+            axis.set_ylabel(label, rotation=0, ha='right', va='center')
+            axis.yaxis.set_label_coords(min_padding / width, ypos)
 
-        elif xpos > 0.5:         # y-label on right axis
-            if axis.yaxis.get_label().get_window_extent().x0 - min_padding < ax1:
-                axis.set_ylabel(label, rotation=0, ha='left', va='center')
-                axis.yaxis.set_label_coords(1.005, ypos)
+    elif xpos > 0.5:         # y-label on right axis
+        min_padding = last_tick_we.x0 - (ax0 + width)
+        if axis.yaxis.get_label().get_window_extent().x0 - min_padding < (ax0 + width):
+            axis.set_ylabel(label, rotation=0, ha='left', va='center')
+            axis.yaxis.set_label_coords(1 + min_padding / width, ypos)
 
 
 def embed_labels(axes, set_captions=False,
@@ -290,10 +299,10 @@ def embed_labels(axes, set_captions=False,
     axes = np.array([axes])
     if axes.ndim > 1:
         axes = axes.flatten()
-    length = axes.shape[0]
+    length = axes.size
 
     if xva is None:
-        xva = np.array(['center'] * length, dtype=str)
+        xva = np.array(['top'] * length, dtype=str)
     else:
         xva = np.array([xva], dtype=str)
         if xva.shape[0] == 1:
@@ -301,7 +310,7 @@ def embed_labels(axes, set_captions=False,
     assert xva.shape[0] == length
 
     if yha is None:
-        yha = np.array(['center'] * length, dtype=str)
+        yha = np.array(['right'] * length, dtype=str)
     else:
         yha = np.array([yha], dtype=str)
         if yha.shape[0] == 1:
@@ -309,10 +318,7 @@ def embed_labels(axes, set_captions=False,
     assert yha.shape[0] == length
 
     if isinstance(set_captions, bool):
-        if set_captions:
-            set_captions = [1] * length
-        else:
-            set_captions = [0] * length
+        set_captions = [set_captions] * length
     else:
         assert len(set_captions) == length
 
@@ -353,8 +359,8 @@ def polish(fig, axes, set_captions=False,
     fig.canvas.draw()
     fig.tight_layout()
     embed_labels(axes, set_captions=set_captions,
-                 embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
-                 xva=xva, yha=yha)
+                  embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
+                  xva=xva, yha=yha)
     fig.canvas.draw()
     fig.tight_layout()
     embed_labels(axes, set_captions=set_captions,
