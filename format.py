@@ -75,10 +75,14 @@ def ticklabels_in_limits(ticklabels, limits, which='x'):
 def _get_largest_ticklabel(ticklabels, which='x'):
     """Return the ticklabel with the largest size along the given axis."""
     return max(ticklabels,
-               key=lambda tck: (getattr(tck.get_window_extent(), f"{which}1")
-                                - getattr(tck.get_window_extent(), f"{which}0"))
+               key=lambda tick: (getattr(tick.get_window_extent(), f"{which}1")
+                                 - getattr(tick.get_window_extent(), f"{which}0"))
                )
 
+
+def _points_to_pixels(points):
+    """Convert points to pixels (see mpl: backends/backend_agg.py)"""
+    return points * plt.rcParams["figure.dpi"] / 72
 
 
 def _embed_label(axis, which='x'):
@@ -114,7 +118,9 @@ def embed_xlabel(axis, align='top', caption=None):
     xpos = (last_tick_we.x0 + ticklabels[-2].get_window_extent().x1) / 2
 
     max_tick_we = _get_largest_ticklabel(ticklabels, which='y').get_window_extent()
-    tick_height = max_tick_we.y1 - max_tick_we.y0
+    
+    # instead of 'max_tick_we.y1' we use the 'ay0 - major_padding' here
+    tick_height = ay0 - _points_to_pixels(plt.rcParams["xtick.major.pad"]) - max_tick_we.y0
 
     if align == 'bottom':
         ypos = max_tick_we.y0 - tick_height / 2
@@ -172,14 +178,13 @@ def embed_ylabel(axis, align='right'):
     axis.yaxis.set_label_coords(xpos, ypos)
 
     # ensure that the y-label has a minimal padding to the y-axis
+    min_padding = _points_to_pixels(plt.rcParams["ytick.major.pad"])
     if xpos < 0.5:           # y-label on left axis
-        min_padding = last_tick_we.x1 - ax0
         if axis.yaxis.get_label().get_window_extent().x1 + min_padding > ax0:
             axis.set_ylabel(label, rotation=0, ha='right', va='center')
-            axis.yaxis.set_label_coords(min_padding / width, ypos)
+            axis.yaxis.set_label_coords(-min_padding / width, ypos)
 
     elif xpos > 0.5:         # y-label on right axis
-        min_padding = last_tick_we.x0 - (ax0 + width)
         if axis.yaxis.get_label().get_window_extent().x0 - min_padding < (ax0 + width):
             axis.set_ylabel(label, rotation=0, ha='left', va='center')
             axis.yaxis.set_label_coords(1 + min_padding / width, ypos)
@@ -260,11 +265,7 @@ def polish(fig, axes, set_captions=False,
     """
     fig.canvas.draw()
     fig.tight_layout()
-    embed_labels(axes, set_captions=False,
-                  embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
-                  xva=xva, yha=yha)
     fig.canvas.draw()
-    fig.tight_layout()
     embed_labels(axes, set_captions=set_captions,
                  embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
                  xva=xva, yha=yha)

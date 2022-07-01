@@ -14,8 +14,8 @@ def main():
     # colors = Colors()
     fig, ax = plt.subplots(2, 2)
     for axis in ax.flat:
-        axis.set_xlabel("x")
-        axis.set_ylabel("y")
+        axis.set_xlabel("xX-lL")
+        axis.set_ylabel("yY-lL")
         # axis.plot(t, np.sin(2*np.pi*t), c=colors.get_color())
         axis.plot(t, np.sin(2*np.pi*t))
     ax[1, 1].plot(t, np.cos(2*np.pi*t))
