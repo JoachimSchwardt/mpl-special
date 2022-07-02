@@ -8,9 +8,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from setup import COLORS
 from matplotlib.collections import LineCollection
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
-__all__ = ['Colors', 'plot_colorbar', 'plot_lines', 'plot_step']
+__all__ = ['Colors', 'colorbar', 'plot_colorbar', 'plot_lines', 'plot_step']
 
 
 class Colors():
@@ -44,6 +45,17 @@ class Colors():
         """Return the most recently used color"""
         cval = self.colors[(self.ctr - 1) % self.clength]
         return cval
+    
+    
+def colorbar(img, axis, loc="right", size="5%", pad=0.1, **kwargs):
+    """Create an axis at the location 'loc' relative to 'axis'. 
+        padding == distance between 'axis' and the axis of the colorbar (inch)
+        size == size of the colorbar along the short direcion.
+    """
+    divider = make_axes_locatable(axis)
+    cax = divider.append_axes(loc, size=size, pad=pad)
+    cbar = plt.colorbar(img, cax=cax, **kwargs)
+    return cbar
 
 
 def plot_colorbar(heat, cmap='viridis', orientation="horizontal", width=0.8, height=0.3,

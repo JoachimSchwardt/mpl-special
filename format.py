@@ -85,11 +85,21 @@ def _points_to_pixels(points):
     return points * plt.rcParams["figure.dpi"] / 72
 
 
+def __assert_existing_renderer(axis):
+    """Check if 'fig.canvas.draw()' or similar were already called
+    Otherwise there may not exist a renderer for the window extents, leading to
+    a RuntimeError in the label embedding routines or similar.
+    """
+    if axis.get_renderer_cache() is None:
+        plt.gcf().canvas.draw()
+
+
 def _embed_label(axis, which='x'):
     """Subroutine:
     Returns the ticklabels within the limits of the given axis as well as a
     list containing [axis_x0, axis_y0, axis_width, axis_height]
     """
+    __assert_existing_renderer(axis)
     ax0 = axis.get_window_extent().x0
     ay0 = axis.get_window_extent().y0
     ax1 = axis.get_window_extent().x1
@@ -98,9 +108,13 @@ def _embed_label(axis, which='x'):
     height = ay1 - ay0
 
     indx = ticks_in_limits(axis, which=which)
-    ticklabels = np.array(getattr(axis, f"get_{which}ticklabels")())[indx]
-    if len(ticklabels) <= 1:
-        raise IndexError("Length of ticklabels below 2!")
+    ticklabels = np.array(getattr(axis, f"get_{which}ticklabels")())
+    if len(ticklabels) == len(indx):
+        ticklabels = ticklabels[indx]
+        
+    if len(ticklabels) < 2:
+        if getattr(axis, f"get_{which}label")():    # if we had a label --> actual error
+            raise IndexError("Length of ticklabels below 2, can not embed label!")
 
     return ticklabels, [ax0, ay0, width, height]
 
@@ -113,12 +127,14 @@ def embed_xlabel(axis, align='top', caption=None):
         'bottom' -> lower edge minus half the label height
     """
     ticklabels, [ax0, ay0, width, height] = _embed_label(axis, which='x')
+    if len(ticklabels) < 2:     # no tick labels, and no label --> skip this (sub)plot
+        return
 
     last_tick_we = ticklabels[-1].get_window_extent()
     xpos = (last_tick_we.x0 + ticklabels[-2].get_window_extent().x1) / 2
 
     max_tick_we = _get_largest_ticklabel(ticklabels, which='y').get_window_extent()
-    
+
     # instead of 'max_tick_we.y1' we use the 'ay0 - major_padding' here
     tick_height = ay0 - _points_to_pixels(plt.rcParams["xtick.major.pad"]) - max_tick_we.y0
 
@@ -154,6 +170,8 @@ def embed_ylabel(axis, align='right'):
         'left' -> left edge minus half the label width
     """
     ticklabels, [ax0, ay0, width, height] = _embed_label(axis, which='y')
+    if len(ticklabels) < 2:     # no tick labels, and no label --> skip this (sub)plot
+        return
 
     last_tick_we = ticklabels[-1].get_window_extent()
     ypos = (last_tick_we.y0 + ticklabels[-2].get_window_extent().y1) / 2
@@ -346,6 +364,6 @@ def si_string(value, unit=r"ms", digits=3):
     The result is rounded to the specified number of digits.
     """
     if not plt.rcParams["text.usetex"]:
-        print(r"Warning special/si_string: \SI only possible in Latex-mode!")
+        print(r"Warning si_string: \SI only possible in Latex-mode!")
         return fr"${value:.{digits}e}\,$" + unit
     return fr"\SI{{{value:.{digits}e}}}{{{unit}}}"
