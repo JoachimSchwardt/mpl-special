@@ -12,7 +12,9 @@ import matplotlib.pyplot as plt
 from figsize import set_figsize
 
 __all__ = ['setup']
-COLORS = ['blue', (1, 0.5, 0), 'green', 'darkred', 'cyan', 'orangered', 'purple', 'lime']
+# COLORS = ['blue', (1, 0.5, 0), 'green', 'darkred', 'cyan', 'orangered', 'purple', 'lime']
+COLORS = ['blue', '#ff8000', 'green', 'darkred', '#00eeee',
+          'orangered', 'purple', '#00ee00']
 
 
 def setup(UseTex=True, figsize=None, colors=None):

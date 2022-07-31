@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 
-__all__ = ['annotate_points', 'draw_bbox']
+__all__ = ['annotate_points', 'adjust_for_text', 'draw_bbox']
 
 
 def annotate_points(ax, text, x, y, yoffset=0.03, align='center',
@@ -41,6 +41,19 @@ def annotate_points(ax, text, x, y, yoffset=0.03, align='center',
     bbox_data = bbox.transformed(ax.transData.inverted())
     ax.update_datalim(bbox_data.corners())
     ax.autoscale_view()
+
+
+def adjust_for_text(ax):
+    """Adjust the axis limits to fit all text boxes"""
+    fig = plt.gcf()          # current figure
+    fig.canvas.draw()        # draw to ensure that a renderer is available
+    fig.tight_layout()       # tight layout to ensure layout will not change
+    for label in ax.texts:
+        bbox = label.get_window_extent()
+        bbox_data = bbox.transformed(ax.transData.inverted())
+        ax.update_datalim(bbox_data.corners())
+    ax.autoscale_view()      # autoscale to account for new limits
+    fig.tight_layout()       # again layout to ensure we remove new whitespace
 
 
 def draw_bbox(ax, x, y, xbuffer=0.01, ybuffer=0.05, **kwargs):

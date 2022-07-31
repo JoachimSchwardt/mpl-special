@@ -5,6 +5,7 @@ Variants of the standard 'plot' routine
 """
 
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from setup import COLORS
 from matplotlib.collections import LineCollection
@@ -45,10 +46,21 @@ class Colors():
         """Return the most recently used color"""
         cval = self.colors[(self.ctr - 1) % self.clength]
         return cval
-    
-    
+
+
+def truncate_colormap(cmap, minval=0.0, maxval=1.0, nvals=100):
+    """Truncate a given colormap to the range [minval, maxval]"""
+    if isinstance(cmap, str):
+        cmap = plt.cm.get_cmap(cmap)
+
+    new_cmap = mpl.colors.LinearSegmentedColormap.from_list(
+         f"trunc({cmap.name},{minval:.2f},{maxval:.2f})",
+         cmap(np.linspace(minval, maxval, nvals)))
+    return new_cmap
+
+
 def colorbar(img, axis, loc="right", size="5%", pad=0.1, **kwargs):
-    """Create an axis at the location 'loc' relative to 'axis'. 
+    """Create an axis at the location 'loc' relative to 'axis'.
         padding == distance between 'axis' and the axis of the colorbar (inch)
         size == size of the colorbar along the short direcion.
     """
