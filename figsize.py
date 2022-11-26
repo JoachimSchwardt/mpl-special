@@ -13,6 +13,7 @@ This file also provides defualt values for common document types
 WIDTH_PT_SCR = 418.25555          # default linewidth of a scr-document in pt
 WIDTH_PT_BMR = 302.0              # default linewidth of a beamer-document in pt
 
+__all__ = ['set_figsize']
 
 def set_figsize(width=None, fraction=1, subplots=(1, 1)):
     """

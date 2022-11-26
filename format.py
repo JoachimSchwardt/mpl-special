@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 __all__ = ['AlphabeticalLabels',
            'set_ticks_linear', 'ticks_in_limits', 'ticklabels_in_limits',
            'embed_xlabel', 'embed_ylabel', 'embed_labels', 'polish',
-           'multiple_formatter', 'format_ticklabels', 'si_string']
+           'multiple_formatter', 'format_ticklabels', 'si_string', 'mathrm']
 
 
 class AlphabeticalLabels():
@@ -109,6 +109,13 @@ def _embed_label(axis, which='x'):
 
     indx = ticks_in_limits(axis, which=which)
     ticklabels = np.array(getattr(axis, f"get_{which}ticklabels")())
+    
+    # # remove empty ticklabels (this may not be necessary anymore, added "draw" call before)
+    # # (in some strange circumstances they appear before the second embedding call)
+    # for ctr, tick in enumerate(ticklabels):
+    #     if tick.properties()['text'] == "":
+    #         indx[ctr] = False
+            
     if len(ticklabels) == len(indx):
         ticklabels = ticklabels[indx]
         
@@ -178,11 +185,12 @@ def embed_ylabel(axis, align='right'):
     tick_width = last_tick_we.x1 - last_tick_we.x0
 
     if align == 'left':
-        xpos = last_tick_we.x0 - tick_width / 2
-    elif align == 'center':
         xpos = last_tick_we.x0
-    elif align == 'right':
+        align = 'right'
+    elif align == 'center':
         xpos = last_tick_we.x0 + tick_width / 2
+    elif align == 'right':
+        xpos = last_tick_we.x1
     else:
         msg = ("Horizontal y-alignment should have been one of "
                 + f"['left', 'center', 'right'], but was {align}!")
@@ -192,7 +200,7 @@ def embed_ylabel(axis, align='right'):
     xpos = (xpos - ax0) / width
     ypos = (ypos - ay0) / height
     label = axis.get_ylabel()
-    axis.set_ylabel(label, rotation=0, ha='center', va='center')
+    axis.set_ylabel(label, rotation=0, ha=align, va='center')
     axis.yaxis.set_label_coords(xpos, ypos)
 
     # ensure that the y-label has a minimal padding to the y-axis
@@ -235,7 +243,7 @@ def embed_labels(axes, set_captions=False,
     assert xva.shape[0] == length
 
     if yha is None:
-        yha = np.array(['right'] * length, dtype=str)
+        yha = np.array(['center'] * length, dtype=str)
     else:
         yha = np.array([yha], dtype=str)
         if yha.shape[0] == 1:
@@ -284,11 +292,19 @@ def polish(fig, axes, set_captions=False,
     fig.canvas.draw()
     fig.tight_layout()
     fig.canvas.draw()
-    embed_labels(axes, set_captions=set_captions,
+    embed_labels(axes, set_captions=False,
                  embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
                  xva=xva, yha=yha)
     fig.canvas.draw()
-    fig.tight_layout()
+    fig.tight_layout(pad=0.5)
+    
+    # in larger plots embedding labels leads to a lot of new space
+    #  --> this tends to require a complete rerun of the embedding (often new ticks!)
+    fig.canvas.draw()
+    embed_labels(axes, set_captions=set_captions,
+                 embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
+                 xva=xva, yha=yha)
+    fig.tight_layout(pad=0.1)
     plt.show()
 
 
@@ -367,3 +383,12 @@ def si_string(value, unit=r"ms", digits=3):
         print(r"Warning si_string: \SI only possible in Latex-mode!")
         return fr"${value:.{digits}e}\,$" + unit
     return fr"\SI{{{value:.{digits}e}}}{{{unit}}}"
+
+
+def mathrm(string):
+    r"""Replaces problematic symbols ('_', etc.) with the proper latex-command.
+    Example:
+        fr"$\nu_{{{mathrm(some_function_or_method.__name__)}}}
+    """
+    new_string = string.replace('_', '\_')
+    return fr"\mathrm{{{new_string}}}"

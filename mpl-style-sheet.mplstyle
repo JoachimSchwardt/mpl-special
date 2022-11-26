@@ -12,7 +12,7 @@ lines.markersize:      2           # marker size, in points (6)
 #lines.solid_capstyle:  projecting  # {butt, round, projecting}
 #lines.antialiased: True            # render lines in antialiased (no jaggies)
 
-font.size:    10.0
+font.size:    12.0
 #text.usetex: False  # use latex for all text handling. The following fonts
                      # are supported through the usual rc parameter settings:
                      # new century schoolbook, bookman, times, palatino,
