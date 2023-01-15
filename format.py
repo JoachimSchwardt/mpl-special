@@ -35,13 +35,13 @@ class AlphabeticalLabels():
         return next_label
 
 
-def set_ticks_linear(axis, vmin, vmax, numticks, decimals=7, which='x'):
+def set_ticks_linear(axis, vmin, vmax, numticks, decimals=7, which='x', dtype=float):
     """
     Puts 'numticks' linearly spaced ticks from 'vmin' to 'vmax' along the
         'axis' of the subplot 'ax'.
     Values are rounded to the specified 'decimals'.
     """
-    ticks = np.round(np.linspace(vmin, vmax, numticks), decimals)
+    ticks = np.round(np.linspace(vmin, vmax, numticks), decimals).astype(dtype)
     getattr(axis, f"set_{which}ticks")(ticks)
     getattr(axis, f"set_{which}ticklabels")(ticks)
 
@@ -289,22 +289,33 @@ def polish(fig, axes, set_captions=False,
     yha == y-vertical alignment array with values 'right', 'center' or 'left'
         refers to the vertical alignment of the ylabel relative to the ticks
     """
-    fig.canvas.draw()
-    fig.tight_layout()
+    # fig.canvas.draw()
+    # fig.tight_layout()
+    # fig.canvas.draw()
+    # embed_labels(axes, set_captions=False,
+    #              embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
+    #              xva=xva, yha=yha)
+    # fig.canvas.draw()
+    # fig.tight_layout(pad=0.1)
+    
+    # # in larger plots embedding labels leads to a lot of new space
+    # #  --> this tends to require a complete rerun of the embedding (often new ticks!)
+    # fig.canvas.draw()
+    # embed_labels(axes, set_captions=set_captions,
+    #              embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
+    #              xva=xva, yha=yha)
+    # plt.show()
     fig.canvas.draw()
     embed_labels(axes, set_captions=False,
                  embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
                  xva=xva, yha=yha)
+    fig.tight_layout(pad=0.1)
     fig.canvas.draw()
-    fig.tight_layout(pad=0.5)
-    
-    # in larger plots embedding labels leads to a lot of new space
-    #  --> this tends to require a complete rerun of the embedding (often new ticks!)
+    fig.tight_layout(pad=0.1)
     fig.canvas.draw()
     embed_labels(axes, set_captions=set_captions,
                  embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
                  xva=xva, yha=yha)
-    fig.tight_layout(pad=0.1)
     plt.show()
 
 

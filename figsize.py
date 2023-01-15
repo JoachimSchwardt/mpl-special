@@ -1,14 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-r"""
+"""
 Simple tool for creating a figsize compatible with latex documents.
-Put the command
-    \showthe\textwidth
-in your latex document and read out the log file to find the correct width (in pt).
-Calling 'set_figsize()' with that width will generate a figure size, that allows
-including plots in your latex documents without any rescaling.
-
-This file also provides defualt values for common document types
 """
 WIDTH_PT_SCR = 418.25555          # default linewidth of a scr-document in pt
 WIDTH_PT_BMR = 302.0              # default linewidth of a beamer-document in pt
@@ -16,7 +9,14 @@ WIDTH_PT_BMR = 302.0              # default linewidth of a beamer-document in pt
 __all__ = ['set_figsize']
 
 def set_figsize(width=None, fraction=1, subplots=(1, 1)):
-    """
+    r"""
+    Put the command
+        \showthe\textwidth
+    in your latex document and read out the log file to find the correct width (in pt).
+    Calling 'set_figsize()' with that width will generate a figure size, that allows
+    including plots in your latex documents without any rescaling.
+
+    This file also provides defualt values for common document types
     Copied from: https://jwalton.info/Embed-Publication-Matplotlib-Latex/
 
     Set figure dimensions to avoid scaling in LaTeX.
