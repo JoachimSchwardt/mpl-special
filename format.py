@@ -109,19 +109,23 @@ def _embed_label(axis, which='x'):
 
     indx = ticks_in_limits(axis, which=which)
     ticklabels = np.array(getattr(axis, f"get_{which}ticklabels")())
-    
+
     # # remove empty ticklabels (this may not be necessary anymore, added "draw" call before)
     # # (in some strange circumstances they appear before the second embedding call)
     # for ctr, tick in enumerate(ticklabels):
     #     if tick.properties()['text'] == "":
     #         indx[ctr] = False
-            
+
     if len(ticklabels) == len(indx):
         ticklabels = ticklabels[indx]
-        
-    if len(ticklabels) < 2:
+
+    if len(ticklabels) < 1:
         if getattr(axis, f"get_{which}label")():    # if we had a label --> actual error
-            raise IndexError("Length of ticklabels below 2, can not embed label!")
+            raise IndexError("Length of ticklabels below 1, can not embed label!")
+    if len(ticklabels) < 2:
+        if getattr(axis, f"get_{which}label")():    # if we had a label --> extend labels  
+            only_indx = np.argmax(indx)
+            ticklabels = ticklabels[only_indx:only_indx+2]
 
     return ticklabels, [ax0, ay0, width, height]
 
@@ -297,7 +301,7 @@ def polish(fig, axes, set_captions=False,
     #              xva=xva, yha=yha)
     # fig.canvas.draw()
     # fig.tight_layout(pad=0.1)
-    
+
     # # in larger plots embedding labels leads to a lot of new space
     # #  --> this tends to require a complete rerun of the embedding (often new ticks!)
     # fig.canvas.draw()
