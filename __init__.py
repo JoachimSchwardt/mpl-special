@@ -8,5 +8,6 @@ from .format import *
 from .annotate import *
 from .plotting import *
 from .figsize import *
+from .utils import *
 
 setup()

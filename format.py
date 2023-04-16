@@ -77,7 +77,7 @@ def _get_largest_ticklabel(ticklabels, which='x'):
     return max(ticklabels,
                key=lambda tick: (getattr(tick.get_window_extent(), f"{which}1")
                                  - getattr(tick.get_window_extent(), f"{which}0"))
-               )
+              )
 
 
 def _points_to_pixels(points):
@@ -123,7 +123,7 @@ def _embed_label(axis, which='x'):
         if getattr(axis, f"get_{which}label")():    # if we had a label --> actual error
             raise IndexError("Length of ticklabels below 1, can not embed label!")
     if len(ticklabels) < 2:
-        if getattr(axis, f"get_{which}label")():    # if we had a label --> extend labels  
+        if getattr(axis, f"get_{which}label")():    # if we had a label --> extend labels
             only_indx = np.argmax(indx)
             ticklabels = ticklabels[only_indx:only_indx+2]
 
@@ -220,7 +220,7 @@ def embed_ylabel(axis, align='right'):
             axis.yaxis.set_label_coords(1 + min_padding / width, ypos)
 
 
-def embed_labels(axes, set_captions=False,
+def embed_labels(fig, axes, set_captions=False,
                  embed_xlabels=True, embed_ylabels=True, xva=None, yha=None):
     """
     axes == single axis or list of axes on which to embed the labels
@@ -233,7 +233,7 @@ def embed_labels(axes, set_captions=False,
     yha == y-vertical alignment array with values 'right', 'center' or 'left'
         refers to the vertical alignment of the ylabel relative to the ticks
     """
-    axes = np.array([axes])
+    axes = np.asarray([axes])
     if axes.ndim > 1:
         axes = axes.flatten()
     length = axes.size
@@ -269,15 +269,32 @@ def embed_labels(axes, set_captions=False,
     else:
         assert len(embed_ylabels) == length
 
-    captions = AlphabeticalLabels()
-    for i, axis in enumerate(axes):
-        if set_captions[i]:
-            caption = captions.get_label()
-        else:
-            caption = None
 
-        embed_xlabel(axis, xva[i], caption)
-        embed_ylabel(axis, yha[i])
+    def update_label_positions(_event):
+        """Start the timer when an event is triggered.
+        The manual delay is needed to ensure the figure has been fully drawn."""
+        update_timer.start()
+
+    def _update_label_positions():
+        """Update all label positions"""
+        captions = AlphabeticalLabels()
+        for i, axis in enumerate(axes):
+            if set_captions[i]:
+                caption = captions.get_label()
+            else:
+                caption = None
+
+            embed_xlabel(axis, xva[i], caption)
+            embed_ylabel(axis, yha[i])
+        fig.canvas.draw()
+
+    update_timer = fig.canvas.new_timer(interval=20)
+    update_timer.add_callback(_update_label_positions)
+    update_timer.single_shot = True
+
+    for event_type in ['resize_event', 'button_release_event', 'key_release_event']:
+        fig.canvas.mpl_connect(event_type, update_label_positions)
+    plt.show()
 
 
 def polish(fig, axes, set_captions=False,
@@ -309,18 +326,23 @@ def polish(fig, axes, set_captions=False,
     #              embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
     #              xva=xva, yha=yha)
     # plt.show()
-    fig.canvas.draw()
-    embed_labels(axes, set_captions=False,
+    # fig.canvas.draw()
+    # embed_labels(axes, set_captions=False,
+    #              embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
+    #              xva=xva, yha=yha)
+    # fig.tight_layout(pad=0.1)
+    # fig.canvas.draw()
+    # fig.tight_layout(pad=0.1)
+    # fig.canvas.draw()
+    # def update_label_position(event):
+    #     embed_labels(axes, set_captions=set_captions,
+    #                  embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
+    #                  xva=xva, yha=yha)
+    #     print("UPDATE_LABEL_POSITION:")
+    print("DeprecationWarning: polish is deprecated, use 'embed_labels'.")
+    embed_labels(fig, axes, set_captions=set_captions,
                  embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
                  xva=xva, yha=yha)
-    fig.tight_layout(pad=0.1)
-    fig.canvas.draw()
-    fig.tight_layout(pad=0.1)
-    fig.canvas.draw()
-    embed_labels(axes, set_captions=set_captions,
-                 embed_xlabels=embed_xlabels, embed_ylabels=embed_ylabels,
-                 xva=xva, yha=yha)
-    plt.show()
 
 
 ###############################################################################
@@ -405,5 +427,5 @@ def mathrm(string):
     Example:
         fr"$\nu_{{{mathrm(some_function_or_method.__name__)}}}
     """
-    new_string = string.replace('_', '\_')
+    new_string = string.replace('_', r'\_')
     return fr"\mathrm{{{new_string}}}"
