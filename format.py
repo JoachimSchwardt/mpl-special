@@ -284,16 +284,20 @@ def embed_labels(fig, axes, set_captions=False,
             else:
                 caption = None
 
-            embed_xlabel(axis, xva[i], caption)
-            embed_ylabel(axis, yha[i])
+            if embed_xlabels[i]:
+                embed_xlabel(axis, xva[i], caption)
+
+            if embed_ylabels[i]:
+                embed_ylabel(axis, yha[i])
         fig.canvas.draw()
 
-    update_timer = fig.canvas.new_timer(interval=20)
+    update_timer = fig.canvas.new_timer(interval=30)
     update_timer.add_callback(_update_label_positions)
     update_timer.single_shot = True
 
     for event_type in ['resize_event', 'button_release_event', 'key_release_event']:
         fig.canvas.mpl_connect(event_type, update_label_positions)
+    update_label_positions(None)
     plt.show()
 
 
