@@ -90,8 +90,14 @@ def __assert_existing_renderer(axis):
     Otherwise there may not exist a renderer for the window extents, leading to
     a RuntimeError in the label embedding routines or similar.
     """
-    if axis.get_renderer_cache() is None:
-        plt.gcf().canvas.draw()
+    try:
+        if axis.get_renderer_cache() is None:
+            plt.gcf().canvas.draw()
+    except AttributeError:      # mpl 3.8.0 removed get_rendered_cache method for Axes
+        # print("WARN: mpl_special/format.py : Could not assert existing renderer.")
+        # if axis.figure.canvas.get_renderer() is None:
+        #     plt.gcf().canvas.draw()
+        return
 
 
 def _embed_label(axis, which='x'):
