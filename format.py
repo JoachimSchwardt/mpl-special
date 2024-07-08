@@ -6,6 +6,7 @@ Tools for formatting ticklabels, labels and captions
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 
 
 __all__ = ['AlphabeticalLabels',
@@ -42,8 +43,7 @@ def set_ticks_linear(axis, vmin, vmax, numticks, decimals=7, which='x', dtype=fl
     Values are rounded to the specified 'decimals'.
     """
     ticks = np.round(np.linspace(vmin, vmax, numticks), decimals).astype(dtype)
-    getattr(axis, f"set_{which}ticks")(ticks)
-    getattr(axis, f"set_{which}ticklabels")(ticks)
+    getattr(axis, f"{which}axis").set_major_locator(ticker.FixedLocator(ticks))
 
 
 def ticks_in_limits(axis, which='x'):
