@@ -50,7 +50,8 @@ def ticks_in_limits(axis, which='x'):
     """Return the indices of ticks within the limits of a given axis"""
     lim = getattr(axis, f"get_{which}lim")()
     ticks = getattr(axis, f"get_{which}ticks")()
-    return (lim[0] <= ticks) & (ticks <= lim[1])
+    close = np.isclose(ticks, lim[0], atol=0) | np.isclose(ticks, lim[1], atol=0)
+    return ((lim[0] <= ticks) & (ticks <= lim[1])) | close
 
 
 def ticklabels_in_limits(ticklabels, limits, which='x'):
