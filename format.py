@@ -49,9 +49,11 @@ def set_ticks_linear(axis, vmin, vmax, numticks, decimals=7, which='x', dtype=fl
 def ticks_in_limits(axis, which='x'):
     """Return the indices of ticks within the limits of a given axis"""
     lim = getattr(axis, f"get_{which}lim")()
-    ticks = getattr(axis, f"get_{which}ticks")()
+    ticks = np.concatenate([getattr(axis, f"get_{which}ticks")(minor=minor) for minor in range(2)])
+    argsort = np.argsort(ticks)
+    ticks = ticks[argsort]
     close = np.isclose(ticks, lim[0], atol=0) | np.isclose(ticks, lim[1], atol=0)
-    return ((lim[0] <= ticks) & (ticks <= lim[1])) | close
+    return ((lim[0] <= ticks) & (ticks <= lim[1])) | close, argsort
 
 
 def ticklabels_in_limits(ticklabels, limits, which='x'):
@@ -114,14 +116,15 @@ def _embed_label(axis, which='x'):
     width = ax1 - ax0
     height = ay1 - ay0
 
-    indx = ticks_in_limits(axis, which=which)
-    ticklabels = np.array(getattr(axis, f"get_{which}ticklabels")())
+    indx, argsort = ticks_in_limits(axis, which=which)
+    ticklabels = np.array(getattr(axis, f"get_{which}ticklabels")(which="both"))[argsort]
+    # ticklabels = np.concatenate([getattr(axis, f"get_{which}ticklabels")(minor=minor) for minor in range(2)])
 
-    # # remove empty ticklabels (this may not be necessary anymore, added "draw" call before)
-    # # (in some strange circumstances they appear before the second embedding call)
-    # for ctr, tick in enumerate(ticklabels):
-    #     if tick.properties()['text'] == "":
-    #         indx[ctr] = False
+    # remove empty ticklabels (this may not be necessary anymore, added "draw" call before)
+    # (in some strange circumstances they appear before the second embedding call)
+    for ctr, tick in enumerate(ticklabels):
+        if tick.properties()['text'] == "":
+            indx[ctr] = False
 
     if len(ticklabels) == len(indx):
         ticklabels = ticklabels[indx]
